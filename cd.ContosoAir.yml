@@ -1,0 +1,45 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- none
+
+resources:
+ pipelines:
+  - pipeline: buildContosoAir # identifier for the resource used in pipeline resource variables
+    source: Student1-29226790.ContosoAir # name of the pipeline that produces the artifact
+    trigger:
+     branches:
+      include:
+       - master
+
+pool:
+  vmImage: ubuntu-latest
+  steps:
+  - task: DownloadPipelineArtifact@2
+    inputs:
+      buildType: 'specific'
+      project: 'e83b566e-9364-4338-8979-057c06bddf6c'
+      definition: '2'
+      buildVersionToDownload: 'latest'
+      targetPath: '$(Pipeline.Workspace)'
+  - task: AzureResourceManagerTemplateDeployment@3
+    inputs:
+      deploymentScope: 'Resource Group'
+      azureResourceManagerConnection: 'Azure Connection'
+      subscriptionId: '6d5d53aa-67d7-4158-8492-f4e9d46e62b1'
+      action: 'Create Or Update Resource Group'
+      resourceGroupName: '$(resourcegroup)'
+      location: 'South India'
+      templateLocation: 'Linked artifact'
+      deploymentMode: 'Incremental'
+  - task: AzureRmWebAppDeployment@4
+    inputs:
+      ConnectionType: 'AzureRM'
+      azureSubscription: 'Azure Connection'
+      appType: 'webApp'
+      WebAppName: '$(web_prefix)-$(web_site)-$(web_environment)'
+      packageForLinux: '$(Pipeline.Workspace)/**/*.zip'
+
